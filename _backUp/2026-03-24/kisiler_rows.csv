@@ -1,0 +1,3 @@
+id,tam_ad,kimlik_no,telefon,eposta,kullanici_hesabi_var_mi,kullanici_id,baslangic_tarihi,bitis_tarihi,olusturma_tarihi,guncelleme_tarihi,admin
+56635417-2223-4a0a-86ec-6c1fee04cd2d,Can B.,38035181470,+90 533 650 08 78,mcboyacioglu@gmail.com,true,0e98a76d-d886-4617-9c3c-0a22f8404d88,2000-01-01,9999-12-31,2026-03-18 19:32:04.797223+00,2026-03-19 12:42:55.293964+00,true
+ca5965b2-70ac-453b-96b4-729a76067940,Selim K.,60307204518,+90 532 292 44 67,selimkoc77@hotmail.com,true,,2000-01-01,9999-12-31,2026-03-18 19:33:00.776767+00,2026-03-19 12:40:15.739386+00,true
