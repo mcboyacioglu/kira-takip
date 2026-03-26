@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Users,
-  Building2,
   TrendingUp,
   AlertCircle,
   ArrowRight,
@@ -31,6 +30,7 @@ export default function Dashboard() {
 
   const { data: sonIslemler = [], isLoading: islemlerYukleniyor } = useIslemler({ limit: 10 })
   const { data: buAyIslemler = [] } = useIslemler({ baslangic: buAyBaslangic, bitis: buAyBitis })
+  const { data: tumIslemler = [], isLoading: tumIslemlerYukleniyor } = useIslemler()
 
   const aktifKiracilar = useMemo(() => {
     const bugun = format(new Date(), 'yyyy-MM-dd')
@@ -80,6 +80,26 @@ export default function Dashboard() {
     return entries.map(([pb, t]) => formatPara(t, pb)).join(' | ')
   }
 
+  const toplamKiraciBorcu = useMemo(() => {
+    const kiraciParaBakiye: Record<string, Record<string, number>> = {}
+    for (const i of tumIslemler) {
+      if (!i.kiraci_id) continue
+      if (!kiraciParaBakiye[i.kiraci_id]) kiraciParaBakiye[i.kiraci_id] = {}
+      if (!kiraciParaBakiye[i.kiraci_id][i.para_birimi]) kiraciParaBakiye[i.kiraci_id][i.para_birimi] = 0
+
+      if (i.tur === 'kira_tahakkuku') kiraciParaBakiye[i.kiraci_id][i.para_birimi] += i.tutar
+      if (i.tur.startsWith('kira_odeme') || i.tur === 'masraf_kiradan_dusulen') kiraciParaBakiye[i.kiraci_id][i.para_birimi] += i.tutar
+    }
+
+    const borcToplam: Record<string, number> = {}
+    for (const paraBakiye of Object.values(kiraciParaBakiye)) {
+      for (const [pb, bakiye] of Object.entries(paraBakiye)) {
+        if (bakiye < 0) borcToplam[pb] = (borcToplam[pb] ?? 0) + Math.abs(bakiye)
+      }
+    }
+    return borcToplam
+  }, [tumIslemler])
+
   return (
     <div className="space-y-6">
       <PageHeader title="Ana Sayfa" description="Genel bakış ve son işlemler" />
@@ -87,16 +107,16 @@ export default function Dashboard() {
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Aktif Kiracı"
-          value={aktifKiracilar.length}
+          title="Aktif Kiracı / Mülk"
+          value={`${aktifKiracilar.length}/${mulkler.length}`}
           icon={Users}
-          loading={kiracilarYukleniyor}
+          loading={kiracilarYukleniyor || mulklerYukleniyor}
         />
         <StatCard
-          title="Aktif Mülk"
-          value={mulkler.length}
-          icon={Building2}
-          loading={mulklerYukleniyor}
+          title="Toplam Kiracı Borcu"
+          value={<span className="text-negative">{formatCokluPara(toplamKiraciBorcu)}</span>}
+          icon={BadgeAlert}
+          loading={tumIslemlerYukleniyor}
         />
         <StatCard
           title="Bu Ay Beklenen"
