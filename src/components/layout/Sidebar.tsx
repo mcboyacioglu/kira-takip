@@ -9,6 +9,9 @@ import {
   X,
   Home,
   Database,
+  CalendarDays,
+  Bell,
+  HandCoins,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -16,15 +19,18 @@ import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/hooks/useAuth'
 
 const navItems = [
-  { href: '/',              label: 'Ana Sayfa',   icon: LayoutDashboard },
-  { href: '/islemler',      label: 'İşlemler',    icon: ArrowLeftRight },
-  { href: '/kiracilar',     label: 'Kiracılar',   icon: Users },
-  { href: '/mulkler',       label: 'Mülkler',     icon: Building2 },
-  { href: '/raporlar',      label: 'Raporlar',    icon: BarChart3 },
+  { href: '/',           label: 'Ana Sayfa',  icon: LayoutDashboard },
+  { href: '/islemler',   label: 'İşlemler',   icon: ArrowLeftRight },
+  { href: '/kiracilar',  label: 'Kiracılar',  icon: Users },
+  { href: '/mulkler',    label: 'Mülkler',    icon: Building2 },
+  { href: '/takvim',     label: 'Takvim',     icon: CalendarDays },
+  { href: '/raporlar',   label: 'Raporlar',   icon: BarChart3 },
+  { href: '/raporlar/ortaklar', label: 'Ortak Raporu', icon: HandCoins },
+  { href: '/bildirimler', label: 'Bildirimler', icon: Bell },
 ]
 
 const adminItems = [
-  { href: '/veri-girisi',   label: 'Veri Girişi', icon: Database },
+  { href: '/veri-girisi', label: 'Veri Girişi', icon: Database },
 ]
 
 const settingsItems = [
@@ -80,9 +86,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-auto p-3">
           {navItems.map((item) => {
-            const active = item.href === '/'
-              ? location.pathname === '/'
-              : location.pathname.startsWith(item.href)
+            const active =
+              item.href === '/'
+                ? location.pathname === '/'
+                : location.pathname.startsWith(item.href)
             return (
               <Link
                 key={item.href}

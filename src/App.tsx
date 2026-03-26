@@ -11,6 +11,9 @@ import MulkDetay from '@/pages/mulkler/MulkDetay'
 import Raporlar from '@/pages/raporlar'
 import VeriGirisi from '@/pages/veri-girisi'
 import Kisiler from '@/pages/ayarlar/Kisiler'
+import KiraCalendar from '@/components/KiraCalendar'
+import { NotificationCenter } from '@/components/NotificationCenter'
+import { PartnerBalanceReport } from '@/components/PartnerBalanceReport'
 import { Toaster } from '@/components/ui/toaster'
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -24,6 +27,32 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }
   if (!session) return <Navigate to="/giris" replace />
   return <>{children}</>
+}
+
+// Wrapper page'ler — AppShell içinde düzgün render için
+function TakvimPage() {
+  return (
+    <div className="p-6">
+      <KiraCalendar />
+    </div>
+  )
+}
+
+function BildirimlerPage() {
+  return (
+    <div className="p-6 max-w-2xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">Bildirimler</h1>
+      <NotificationCenter />
+    </div>
+  )
+}
+
+function OrtakRaporPage() {
+  return (
+    <div className="p-6">
+      <PartnerBalanceReport />
+    </div>
+  )
 }
 
 export default function App() {
@@ -46,6 +75,9 @@ export default function App() {
           <Route path="mulkler" element={<MulklerListesi />} />
           <Route path="mulkler/:id" element={<MulkDetay />} />
           <Route path="raporlar" element={<Raporlar />} />
+          <Route path="raporlar/ortaklar" element={<OrtakRaporPage />} />
+          <Route path="takvim" element={<TakvimPage />} />
+          <Route path="bildirimler" element={<BildirimlerPage />} />
           <Route path="veri-girisi" element={<VeriGirisi />} />
           <Route path="ayarlar/kisiler" element={<Kisiler />} />
           <Route path="*" element={<Navigate to="/" replace />} />
