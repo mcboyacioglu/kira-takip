@@ -111,6 +111,7 @@ export default function Kisiler() {
           <KisiForm kisi={seciliKisi} onSuccess={() => { setFormAcik(false); setSeciliKisi(undefined) }} />
         </DialogContent>
       </Dialog>
+
     </div>
   )
 }

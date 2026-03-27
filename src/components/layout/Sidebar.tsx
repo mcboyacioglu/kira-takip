@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/hooks/useAuth'
+import { useEffectivePageVisibility, PageKey } from '@/hooks/usePageVisibility'
 
 const navItems = [
   { href: '/',           label: 'Ana Sayfa',  icon: LayoutDashboard },
@@ -24,9 +25,12 @@ const navItems = [
   { href: '/kiracilar',  label: 'Kiracılar',  icon: Users },
   { href: '/mulkler',    label: 'Mülkler',    icon: Building2 },
   { href: '/takvim',     label: 'Takvim',     icon: CalendarDays },
-  { href: '/raporlar',   label: 'Raporlar',   icon: BarChart3 },
-  { href: '/raporlar/ortaklar', label: 'Ortak Raporu', icon: HandCoins },
   { href: '/bildirimler', label: 'Bildirimler', icon: Bell },
+]
+
+const reportItems = [
+  { href: '/raporlar', label: 'Genel raporlar', icon: BarChart3 },
+  { href: '/raporlar/ortaklar', label: 'Ortak raporu', icon: HandCoins },
 ]
 
 const adminItems = [
@@ -35,6 +39,7 @@ const adminItems = [
 
 const settingsItems = [
   { href: '/ayarlar/kisiler', label: 'Kişiler', icon: Settings },
+  { href: '/ayarlar/sayfa-erisim', label: 'Sayfa Erişim', icon: Settings },
 ]
 
 interface SidebarProps {
@@ -45,6 +50,10 @@ interface SidebarProps {
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const location = useLocation()
   const { isAdmin } = useAuth()
+  const visibility = useEffectivePageVisibility()
+  const canSee = (href: string) => isAdmin || visibility[href as PageKey] === 'all'
+  const visibleReports = reportItems.filter((item) => canSee(item.href))
+  const visibleSettings = settingsItems.filter((item) => canSee(item.href))
 
   return (
     <>
@@ -85,7 +94,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-auto p-3">
-          {navItems.map((item) => {
+          {navItems.filter((item) => canSee(item.href)).map((item) => {
             const active =
               item.href === '/'
                 ? location.pathname === '/'
@@ -108,13 +117,44 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             )
           })}
 
+          {/* Raporlar */}
+          {visibleReports.length > 0 && (
+            <div className="pt-4">
+              <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Raporlar
+              </p>
+              {visibleReports.map((item) => {
+                const active =
+                  item.href === '/raporlar'
+                    ? location.pathname === '/raporlar'
+                    : location.pathname.startsWith(item.href)
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    onClick={onClose}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                      active
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    )}
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+
           {/* Admin-only: Veri Girişi */}
           {isAdmin && (
             <div className="pt-4">
               <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
                 Yönetim
               </p>
-              {adminItems.map((item) => {
+              {adminItems.filter((item) => canSee(item.href)).map((item) => {
                 const active = location.pathname.startsWith(item.href)
                 return (
                   <Link
@@ -136,11 +176,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             </div>
           )}
 
-          <div className="pt-4">
-            <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-              Ayarlar
-            </p>
-            {settingsItems.map((item) => {
+          {visibleSettings.length > 0 && (
+            <div className="pt-4">
+              <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Ayarlar
+              </p>
+              {visibleSettings.map((item) => {
               const active = location.pathname.startsWith(item.href)
               return (
                 <Link
@@ -158,8 +199,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   {item.label}
                 </Link>
               )
-            })}
-          </div>
+              })}
+            </div>
+          )}
         </nav>
 
         {/* Footer */}

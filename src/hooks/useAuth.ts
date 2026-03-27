@@ -1,49 +1,108 @@
-import { useEffect, useState } from 'react'
+import { createContext, createElement, useContext, useEffect, useMemo, useState } from 'react'
 import { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 
-export function useAuth() {
+interface AuthContextValue {
+  session: Session | null
+  user: User | null
+  loading: boolean
+  isAdmin: boolean
+  signOut: () => Promise<void>
+}
+
+const AuthContext = createContext<AuthContextValue | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
+    let alive = true
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null
+
     const fetchUserData = async (userId: string) => {
-      const { data } = await supabase
-        .from('kisiler')
-        .select('admin')
-        .eq('kullanici_id', userId)
-        .maybeSingle()
-      setIsAdmin(data?.admin ?? false)
+      try {
+        const { data, error } = await supabase
+          .from('kisiler')
+          .select('admin')
+          .eq('kullanici_id', userId)
+          .maybeSingle()
+        if (error) {
+          if (alive) setIsAdmin(false)
+          return
+        }
+        if (alive) setIsAdmin(data?.admin ?? false)
+      } catch {
+        if (alive) setIsAdmin(false)
+      }
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchUserData(session.user.id)
-      }
-      setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+    void supabase.auth.getSession().then(async ({ data: { session } }) => {
+      try {
+        if (!alive) return
         setSession(session)
         setUser(session?.user ?? null)
         if (session?.user) {
-          fetchUserData(session.user.id)
-        } else {
+          await fetchUserData(session.user.id)
+        } else if (alive) {
           setIsAdmin(false)
         }
-        setLoading(false)
+      } finally {
+        if (alive) setLoading(false)
+      }
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, nextSession) => {
+        if (event === 'INITIAL_SESSION') return
+        if (!alive) return
+        setSession(nextSession)
+        setUser(nextSession?.user ?? null)
+        if (nextSession?.user) {
+          await fetchUserData(nextSession.user.id)
+        } else if (alive) {
+          setIsAdmin(false)
+        }
       }
     )
 
-    return () => subscription.unsubscribe()
+    fallbackTimer = setTimeout(() => {
+      if (alive) setLoading(false)
+    }, 4000)
+
+    return () => {
+      alive = false
+      if (fallbackTimer) clearTimeout(fallbackTimer)
+      subscription.unsubscribe()
+    }
   }, [])
 
-  const signOut = () => supabase.auth.signOut()
+  const signOut = async () => {
+    await supabase.auth.signOut()
+    setSession(null)
+    setUser(null)
+    setIsAdmin(false)
+    setLoading(false)
+  }
 
-  return { session, user, loading, isAdmin, signOut }
+  const value = useMemo<AuthContextValue>(
+    () => ({ session, user, loading, isAdmin, signOut }),
+    [session, user, loading, isAdmin]
+  )
+
+  return createElement(AuthContext.Provider, { value }, children)
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext)
+  if (ctx) return ctx
+  return {
+    session: null,
+    user: null,
+    loading: false,
+    isAdmin: false,
+    signOut: async () => undefined,
+  }
 }

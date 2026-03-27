@@ -13,7 +13,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onMenuClick }: HeaderProps) {
-  const { user, signOut } = useAuth()
+  const { user, signOut, loading } = useAuth()
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
@@ -38,7 +38,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={signOut} className="text-destructive">
+          <DropdownMenuItem onClick={() => void signOut()} disabled={loading} className="text-destructive">
             <LogOut className="mr-2 h-4 w-4" />
             Çıkış Yap
           </DropdownMenuItem>

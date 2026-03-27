@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from 'date-fns'
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday } from 'date-fns'
 import { tr } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ISLEM_TURU_LABEL, IslemTuru } from '@/types'
@@ -29,6 +29,17 @@ export function KiraCalendar() {
     fetchMonthEvents()
   }, [currentDate, selectedMulk])
 
+  useEffect(() => {
+    const fetchMulkler = async () => {
+      const { data } = await supabase
+        .from('mulkler')
+        .select('id, ad')
+        .order('ad', { ascending: true })
+      setMulkler((data || []) as Array<{ id: string; ad: string }>)
+    }
+    fetchMulkler()
+  }, [])
+
   const fetchMonthEvents = async () => {
     setLoading(true)
     try {
@@ -42,12 +53,6 @@ export function KiraCalendar() {
         .order('baslangic_tarihi', { ascending: true })
 
       if (kiralarErr) throw kiralarErr
-
-      const mulkMap = new Map<string, { id: string; ad: string }>()
-      ;(kiralarData || []).forEach((k: any) => {
-        if (k?.mulk?.id && k?.mulk?.ad) mulkMap.set(k.mulk.id, { id: k.mulk.id, ad: k.mulk.ad })
-      })
-      setMulkler(Array.from(mulkMap.values()).sort((a, b) => a.ad.localeCompare(b.ad)))
 
       const kiraEvents: CalendarEvent[] = []
       for (const k of kiralarData || []) {
@@ -205,7 +210,7 @@ export function KiraCalendar() {
               key={day.toString()}
               className={`min-h-24 border rounded-lg p-2 ${
                 isCurrentMonth ? 'bg-card' : 'bg-muted/20'
-              } hover:bg-accent/30 transition cursor-pointer`}
+              } ${isToday(day) ? 'border-primary border-2 ring-1 ring-primary/30' : ''} hover:bg-accent/30 transition cursor-pointer`}
             >
               <div className="font-semibold text-sm mb-1">
                 {format(day, 'd')}
